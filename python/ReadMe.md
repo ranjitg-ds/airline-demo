@@ -2,6 +2,15 @@
 
 These python scripts are used to generate and clean data from the demo tables.
 
+## Create Your credentials.py file
+
+The generate.py file will look for a credentials.py file. Your credentials.py file should be in the following format:
+
+```sh
+client_id="<your client id>"
+client_secret="<your client secret>"
+```
+
 ## Creating the CSV Files
 
 Right now, the only script that is really used is the generate.py
