@@ -8,11 +8,14 @@
 import 'dart:convert';
 import 'dart:core';
 import 'package:airline_demo/entities/Flight.dart';
+import 'package:airline_demo/entities/Ticket.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
+import '../AppState.dart';
 import '../entities/LoginResponse.dart';
 import '../entities/Preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class APIManager {
   static const String ASTRA_DB_ID = '6f46c335-f1c1-4ee4-9d28-dd909821e7cf';
@@ -203,48 +206,98 @@ class APIManager {
     return Future.value(flightList);
   }
 
-  /// SAVE the User Preferences
-  /// SAMPLE CURL
-  /// curl -X PUT "https://dad43061-23d9-43ec-9c1f-6de1f7349a61-us-west-2.apps.astra.datastax.com/api/rest/v2/namespaces/kcorp/collections/user_prefs/1"
-  ///  -H  "accept: application/json"
-  ///  -H  "X-Cassandra-Token: AstraCS:xWzDcZFgLBfWAkidaNBQwMza:db54f6d326fb01876f0b14574a3a5b8515e56639b6f75a888d39b6a96776f70b"
-  ///  -H  "Content-Type: application/json"
-  ///  -d "{ \"use24HourClock\" : 1,   \"useMetric\": 0}"
-  static void saveUserPreferences(String id, Preferences preferences) async {
-    // Now lets make a call to the Document API and save the user preferences
-    // for this specific user
-    String url = _baseURL +
-        '/api/rest/v2/namespaces/' +
-        ASTRA_DB_KEYSPACE +
-        '/collections/user_prefs/' +
-        Uri.encodeComponent(id);
+  /// Buy a ticket for a specific flight
+  static Future<Ticket> buyTicket(Flight flight, String userID) async {
+    // Create a ticket
+    AppState appState = AppState();
+    var uuid = Uuid();
+    Ticket ticket = Ticket();
+    ticket.id = uuid.v4();
+    ticket.flight_id = flight.id;
+    ticket.origin_city = flight.origin_city;
+    ticket.destination_city = flight.destination_city;
+    ticket.departure_gate = flight.departure_gate;
+    ticket.departure_time = flight.departure_time;
+    ticket.checkin_time = "";
+    ticket.carousel = flight.carousel;
+    ticket.passenger_id = appState.userID!;
+    ticket.passenger_name = appState.userFirstName!;
 
-    print('URL = ' + url);
-    print('JSON = ' + preferences.toJsonString());
-    final response = await http.put(Uri.parse(url),
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-          'X-Cassandra-Token': APP_TOKEN
-        },
-        body: preferences.toJsonString());
+    // Now lets make a call to the REST API to write out this ticket
+    String url =
+        _baseURL + '/api/rest/v2/keyspaces/' + ASTRA_DB_KEYSPACE + '/ticket';
+
+    final response = await http.post(Uri.parse(url),
+        headers: {'accept': 'application/json', 'X-Cassandra-Token': APP_TOKEN},
+        body: ticket.toJson());
 
     if (response.statusCode == 200) {
-      // The successful response will take this form:
+      // A successful response looks like the following:
       // {
-      //   "documentId": "1"
+      //   "id": "33330000-1111-1111-1111-000011110000"
       // }
 
-      // I'm punting here and not taking the time to operationalize the
-      // remaining code. We will assume the id returned equals the id
-      // submitted.
-      //final jsonResponse = json.decode(response.body);
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse != null) {
+        // int count = jsonResponse['count'] as int;
+        ticket.id = jsonResponse['id'] as String;
+      } else {
+        // Error on the GET request
+        // print(response.body);
+      } // jsonResponse == null
+    }
+    // flightList.sort();
+    return ticket;
+  }
 
-    } else {
-      // Error on the GET request
-      print(response.body);
-      throw new ClientException(
-          'An error occured savingthe user prefs: ' + response.body);
-    } // jsonResponse == null
+  /// Buy a ticket for a specific flight
+  static Future<bool> checkIn(Ticket ticket, int numBags) async {
+    // check in for this flight
+    // Get the current time as a string
+
+    AppState appState = AppState();
+    var now = DateTime.now();
+    int hour = now.hour % 12;
+    String AMPM = now.hour > 12 ? "PM" : "AM";
+    String timeString =
+        hour.toString() + ":" + now.minute.toString() + " " + AMPM;
+    Map<String, dynamic> checkIn = <String, dynamic>{};
+    checkIn["checkin_time"] = timeString;
+
+    // Now lets make a call to the REST API to write out this ticket
+    String url = _baseURL +
+        '/api/rest/v2/keyspaces/' +
+        ASTRA_DB_KEYSPACE +
+        '/ticket/' +
+        ticket.id;
+
+    final response = await http.put(Uri.parse(url),
+        headers: {'accept': 'application/json', 'X-Cassandra-Token': APP_TOKEN},
+        body: jsonEncode(checkIn));
+
+    if (response.statusCode == 201) {
+      // A successful response looks like the following:
+      // {
+      //   "data": {
+      //     "checkin_time": "07:15 AM"
+      //   }
+      // }
+
+      final jsonResponse = json.decode(response.body);
+      if (jsonResponse != null) {
+        // Ok, lets create the baggage records
+        url = _baseURL +
+            '/api/rest/v2/keyspaces/' +
+            ASTRA_DB_KEYSPACE +
+            '/baggage';
+        for (int x = 0; x < numBags; x++) {}
+        // int count = jsonResponse['count'] as int;
+        ticket.id = jsonResponse['id'] as String;
+      } else {
+        // Error on the GET request
+        // print(response.body);
+      } // jsonResponse == null
+    }
+    return true;
   }
 }
