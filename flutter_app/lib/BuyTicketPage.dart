@@ -14,6 +14,7 @@ class _BuyTicketPageState extends State<BuyTicketPage> {
   final passwordCtl = TextEditingController();
   late List<String> cityList;
   List<Flight> flightList = List<Flight>.empty(growable: true);
+  Flight? selectedFlight = null;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +162,13 @@ class _BuyTicketPageState extends State<BuyTicketPage> {
                                   )),
                             ),
                           ]),
-                      Expanded(flex: 20, child: _buildListView())
+                      Expanded(flex: 20, child: _buildListView()),
+                      TextButton(
+                          onPressed: () {
+                            // Buy a ticket for the selected flight
+                            buyTicket();
+                          },
+                          child: Text("Buy Ticket"))
                     ],
                   ),
                 ),
@@ -198,11 +205,16 @@ class _BuyTicketPageState extends State<BuyTicketPage> {
     );
   }
 
+  buyTicket() {
+    print("Buying a ticket for flight: " + selectedFlight!.id);
+  }
+
   // Build a ListView to show a list of products.
   Widget _buildListView() {
     return ListView.separated(
         separatorBuilder: (context, index) => Divider(
               color: Colors.black,
+              height: 1,
             ),
         shrinkWrap: true,
         padding: const EdgeInsets.all(2.0),
@@ -215,7 +227,10 @@ class _BuyTicketPageState extends State<BuyTicketPage> {
   /// Build a ListTile for the given product
   Widget _buildRow({required Flight flight}) {
     return ListTile(
-      contentPadding: const EdgeInsets.all(4.0),
+      contentPadding: const EdgeInsets.all(1.0),
+      focusColor: Colors.amber,
+      autofocus: true,
+      tileColor: (selectedFlight == flight) ? Colors.amber : Colors.white,
       // leading: getItemStateIcon(item),
       title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -254,8 +269,9 @@ class _BuyTicketPageState extends State<BuyTicketPage> {
             ),
           ]),
       onTap: () {
-        // TBD
-        //_showProductDetailPage(item.id);
+        setState(() {
+          selectedFlight = flight;
+        });
       },
     );
   }
@@ -266,6 +282,8 @@ class _BuyTicketPageState extends State<BuyTicketPage> {
     // if (origin_city != null && origin_city != 'Choose a city...') {
     //   if (destination_city != null && destination_city != 'Choose a city...') {
     showLoaderDialog(context);
+    selectedFlight =
+        null; // Can't have a selected flight if we are building the list!
     Future<List<Flight>> fList =
         APIManager.getFlights(origin_city, destination_city);
     fList.then((value) => {flightList = value});
