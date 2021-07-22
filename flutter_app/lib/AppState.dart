@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'entities/Preferences.dart';
+import 'entities/Ticket.dart';
 
 class AppState extends ChangeNotifier {
   String? userID = null; // Default to not logged in
   String? userFirstName;
   bool _isLoaded = false;
+  Ticket? ticket = null;
+  bool isCheckedIn = false;
   Preferences preferences = Preferences();
 
   /// If [true], then show all times in the 24 hour format. Else show the 12 hour format
