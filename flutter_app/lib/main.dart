@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 import 'AppState.dart';
 import 'BuyTicketPage.dart';
+import 'CheckInPage.dart';
 import 'LoginPage.dart';
 import 'util/APIManager.dart';
 import 'util/DrawerStateInfo.dart';
@@ -53,7 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
         appBar: AppBar(
           title: Text(
-            'My Airline X',
+            'My Airline',
             style: TextStyle(color: Colors.white),
           ),
         ),
@@ -77,6 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 builder: (context) => LoginPage()));
                         setState(() {
                           appState.userID = result;
+                          appState.userFirstName = "Demo";
                         });
                       }
                     },
@@ -84,14 +86,30 @@ class _MyHomePageState extends State<MyHomePage> {
                         appState.isLoggedIn() ? Text('Logout') : Text('Login')),
                 TextButton(
                     onPressed: appState.isLoggedIn()
-                        ? () {
-                            Navigator.push(
+                        ? () async {
+                            final ticket = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => BuyTicketPage()));
+                            setState(() {
+                              appState.ticket = ticket;
+                            });
                           }
                         : null,
                     child: Text('Buy Ticket')),
+                TextButton(
+                    onPressed: appState.ticket != null
+                        ? () async {
+                            final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => CheckInPage()));
+                            setState(() {
+                              appState = AppState();
+                            });
+                          }
+                        : null,
+                    child: Text('Checkin')),
               ],
             ),
           ),
