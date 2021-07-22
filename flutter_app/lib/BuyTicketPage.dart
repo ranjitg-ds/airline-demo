@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../util/APIManager.dart';
 import 'AppState.dart';
 import 'entities/Flight.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
+import 'entities/Ticket.dart';
 
 class BuyTicketPage extends StatefulWidget {
   @override
@@ -207,6 +210,22 @@ class _BuyTicketPageState extends State<BuyTicketPage> {
 
   buyTicket() {
     print("Buying a ticket for flight: " + selectedFlight!.id);
+    Future<Ticket> ticket =
+        APIManager.buyTicket(selectedFlight!, appState.userID!);
+    ticket.then((value) => handleTicketResponse(value));
+  }
+
+  void handleTicketResponse(Ticket ticket) {
+    Navigator.pop(context, ticket); // Pop the login page
+    // Show a toast messge about the successful login.
+    Fluttertoast.showToast(
+        msg: "Ticket puchased!",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.blue,
+        textColor: Colors.white,
+        fontSize: 16.0);
   }
 
   // Build a ListView to show a list of products.
