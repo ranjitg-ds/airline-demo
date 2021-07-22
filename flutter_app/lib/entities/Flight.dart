@@ -7,6 +7,7 @@ class Flight {
   late String departure_time;
   late String destination_city;
   late String origin_city;
+  late String carousel;
 
   Flight.fromJson(Map<String, dynamic> json) {
     id = json['id'] as String;
@@ -14,6 +15,7 @@ class Flight {
     departure_time = json['departure_time'] as String;
     destination_city = json['destination_city'] as String;
     origin_city = json['origin_city'] as String;
+    carousel = json['carousel'] as String;
   }
 
   Map<String, dynamic> toJson() {
